@@ -33,3 +33,7 @@ build/
 .vscode/
 
 ### 隐私数据 ###
+application-local.yaml
+
+### 生成的数据 ###
+**/tmp/
