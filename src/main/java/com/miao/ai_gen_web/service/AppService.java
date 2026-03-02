@@ -1,6 +1,7 @@
 package com.miao.ai_gen_web.service;
 
 import com.miao.ai_gen_web.entity.User;
+import com.miao.ai_gen_web.model.dto.app.AppAddRequest;
 import com.miao.ai_gen_web.model.dto.app.AppQueryRequest;
 import com.miao.ai_gen_web.model.vo.AppVO;
 import com.mybatisflex.core.query.QueryWrapper;
@@ -28,4 +29,6 @@ public interface AppService extends IService<App> {
     void generateAppScreenshotAsync(Long appId, String appUrl);
 
     String deployApp(Long appId, User loginUser);
+
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 }
