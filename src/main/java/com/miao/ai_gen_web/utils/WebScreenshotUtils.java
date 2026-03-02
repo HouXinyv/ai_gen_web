@@ -49,6 +49,8 @@ public class WebScreenshotUtils {
      */
     private static WebDriver initChromeDriver(int width, int height) {
         try {
+            // 设置代理
+            System.setProperty("wdm.chromeDriverMirrorUrl", "https://registry.npmmirror.com/binary.html?path=chromedriver");
             // 自动管理 ChromeDriver
             WebDriverManager.chromedriver().setup();
             // 配置 Chrome 选项
