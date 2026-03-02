@@ -7,6 +7,7 @@ import com.miao.ai_gen_web.annotation.AuthCheck;
 import com.miao.ai_gen_web.common.BaseResponse;
 import com.miao.ai_gen_web.common.DeleteRequest;
 import com.miao.ai_gen_web.common.ResultUtils;
+import com.miao.ai_gen_web.constant.AppConstant;
 import com.miao.ai_gen_web.constant.UserConstant;
 import com.miao.ai_gen_web.entity.User;
 import com.miao.ai_gen_web.exception.BusinessException;
@@ -16,11 +17,13 @@ import com.miao.ai_gen_web.model.dto.app.*;
 import com.miao.ai_gen_web.model.enums.CodeGenTypeEnum;
 import com.miao.ai_gen_web.model.vo.AppVO;
 import com.miao.ai_gen_web.service.ChatHistoryService;
+import com.miao.ai_gen_web.service.ProjectDownloadService;
 import com.miao.ai_gen_web.service.UserService;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,7 @@ import com.miao.ai_gen_web.service.AppService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +55,9 @@ public class AppController {
 
     @Resource // 优先按照名称
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private ProjectDownloadService projectDownloadService;
     /**
      * 创建应用
      *
@@ -308,6 +315,41 @@ public class AppController {
         // 调用服务部署应用
         String deployUrl = appService.deployApp(appId, loginUser);
         return ResultUtils.success(deployUrl);
+    }
+
+    /**
+     * 下载应用代码
+     *
+     * @param appId    应用ID
+     * @param request  请求
+     * @param response 响应
+     */
+    @GetMapping("/download/{appId}")
+    public void downloadAppCode(@PathVariable Long appId,
+                                HttpServletRequest request,
+                                HttpServletResponse response) {
+        // 1. 基础校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
+        // 2. 查询应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 3. 权限校验：只有应用创建者可以下载代码
+        User loginUser = userService.getLoginUser(request);
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限下载该应用代码");
+        }
+        // 4. 构建应用代码目录路径（生成目录，非部署目录）
+        String codeGenType = app.getCodeGenType();
+        String sourceDirName = codeGenType + "_" + appId;
+        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
+        // 5. 检查代码目录是否存在
+        File sourceDir = new File(sourceDirPath);
+        ThrowUtils.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(),
+                ErrorCode.NOT_FOUND_ERROR, "应用代码不存在，请先生成代码");
+        // 6. 生成下载文件名（不建议添加中文内容）
+        String downloadFileName = String.valueOf(appId);
+        // 7. 调用通用下载服务
+        projectDownloadService.downloadProjectAsZip(sourceDirPath, downloadFileName, response);
     }
 
 }
