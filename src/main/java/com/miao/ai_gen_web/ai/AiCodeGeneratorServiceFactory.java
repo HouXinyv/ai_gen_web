@@ -117,7 +117,7 @@ public class AiCodeGeneratorServiceFactory {
             case HTML, MULTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
                     .chatModel(openAiChatModel)
                     .streamingChatModel(openAiStreamingChatModel)
-                    .chatMemory(chatMemory)
+                    .chatMemoryProvider(memoryId -> chatMemory)
                     .build();
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR,
                     "不支持的代码生成类型: " + codeGenType.getValue());
