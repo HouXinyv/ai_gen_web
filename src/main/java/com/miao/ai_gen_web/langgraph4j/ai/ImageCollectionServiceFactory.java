@@ -5,6 +5,7 @@ import com.miao.ai_gen_web.langgraph4j.tools.ImageSearchTool;
 import com.miao.ai_gen_web.langgraph4j.tools.LogoGeneratorTool;
 import com.miao.ai_gen_web.langgraph4j.tools.MermaidDiagramTool;
 import com.miao.ai_gen_web.langgraph4j.tools.UndrawIllustrationTool;
+import com.miao.ai_gen_web.utils.SpringContextUtil;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
@@ -18,9 +19,6 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class ImageCollectionServiceFactory {
-
-    @Resource
-    private ChatModel routeChatModel;
 
     @Resource
     private ImageSearchTool imageSearchTool;
@@ -39,6 +37,7 @@ public class ImageCollectionServiceFactory {
      */
     @Bean
     public ImageCollectionService createImageCollectionService() {
+        ChatModel routeChatModel = SpringContextUtil.getBean("routeCMPrototype",ChatModel.class);
         return AiServices.builder(ImageCollectionService.class)
                 .chatModel(routeChatModel)
                 .tools(

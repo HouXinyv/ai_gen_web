@@ -13,11 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AiCodeGenTypeRoutingServiceTest {
 
     @Resource
-    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+    private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
     @Test
     public void testRouteCodeGenType() {
         String userPrompt = "做一个简单的个人介绍页面";
+        AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService
+                = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
         CodeGenTypeEnum result = aiCodeGenTypeRoutingService.routeCodeGenType(userPrompt);
         log.info("用户需求: {} -> {}", userPrompt, result.getValue());
         userPrompt = "做一个公司官网，需要首页、关于我们、联系我们三个页面";

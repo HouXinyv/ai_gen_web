@@ -1,6 +1,7 @@
 package com.miao.ai_gen_web.langgraph4j.node;
 
 import com.miao.ai_gen_web.ai.AiCodeGenTypeRoutingService;
+import com.miao.ai_gen_web.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.miao.ai_gen_web.langgraph4j.state.WorkflowContext;
 import com.miao.ai_gen_web.model.enums.CodeGenTypeEnum;
 import com.miao.ai_gen_web.utils.SpringContextUtil;
@@ -12,6 +13,8 @@ import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
 @Slf4j
 public class RouterNode {
+    private static AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory
+            = SpringContextUtil.getBean(AiCodeGenTypeRoutingServiceFactory.class);;
 
     public static AsyncNodeAction<MessagesState<String>> create() {
         return node_async(state -> {
@@ -21,7 +24,7 @@ public class RouterNode {
             CodeGenTypeEnum generationType;
             try {
                 // 获取AI路由服务
-                AiCodeGenTypeRoutingService routingService = SpringContextUtil.getBean(AiCodeGenTypeRoutingService.class);
+                AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
                 // 根据原始提示词进行智能路由
                 generationType = routingService.routeCodeGenType(context.getOriginalPrompt());
                 log.info("AI智能路由完成，选择类型: {} ({})", generationType.getValue(), generationType.getText());

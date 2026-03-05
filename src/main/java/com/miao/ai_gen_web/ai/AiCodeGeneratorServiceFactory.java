@@ -7,6 +7,7 @@ import com.miao.ai_gen_web.exception.BusinessException;
 import com.miao.ai_gen_web.exception.ErrorCode;
 import com.miao.ai_gen_web.model.enums.CodeGenTypeEnum;
 import com.miao.ai_gen_web.service.ChatHistoryService;
+import com.miao.ai_gen_web.utils.SpringContextUtil;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -24,15 +25,6 @@ import java.time.Duration;
 @Slf4j
 @Configuration
 public class AiCodeGeneratorServiceFactory {
-
-    @Resource
-    private ChatModel openAiChatModel;
-
-    @Resource
-    private StreamingChatModel openAiStreamingChatModel;
-
-    @Resource
-    private StreamingChatModel reasoningStreamingChatModel;
 
     @Resource
     private RedisChatMemoryStore redisChatMemoryStore;
@@ -58,15 +50,6 @@ public class AiCodeGeneratorServiceFactory {
                 log.debug("AI 服务实例被移除，appId: {}, 原因: {}", key, cause);
             })
             .build();
-
-
-    /**
-     * 根据 appId 获取服务（带缓存）
-     */
-
-    public AiCodeGeneratorService getAiCodeGeneratorService(Long appId) {
-        return getAiCodeGeneratorService(appId, CodeGenTypeEnum.HTML);
-    }
 
     public AiCodeGeneratorService getAiCodeGeneratorService(Long appId, CodeGenTypeEnum codeGenType){
         String cacheKey = buildCacheKey(appId, codeGenType);
@@ -101,8 +84,10 @@ public class AiCodeGeneratorServiceFactory {
         // 根据代码生成类型选择不同的模型配置
         return switch (codeGenType) {
             // Vue 项目生成使用推理模型
-            case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
+            case VUE_PROJECT -> {
+                StreamingChatModel codeRSCM = SpringContextUtil.getBean("codeRSCMPrototype",StreamingChatModel.class);
+                yield AiServices.builder(AiCodeGeneratorService.class)
+                    .streamingChatModel(codeRSCM)
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .tools(
                             toolManager.getAllTools()
@@ -111,24 +96,24 @@ public class AiCodeGeneratorServiceFactory {
                             toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
                     ))// 出现幻觉的时候，工具不存在的情况时，做什么
                     .build();
+            }
 
 
             // HTML 和多文件生成使用默认模型
-            case HTML, MULTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
-                    .chatModel(openAiChatModel)
-                    .streamingChatModel(openAiStreamingChatModel)
+            case HTML, MULTI_FILE -> {
+                ChatModel codeCM = SpringContextUtil.getBean("codeCMPrototype",ChatModel.class);
+                StreamingChatModel codeSCM = SpringContextUtil.getBean("codeSCMPrototype",StreamingChatModel.class);
+                yield AiServices.builder(AiCodeGeneratorService.class)
+                    .chatModel(codeCM)
+                    .streamingChatModel(codeSCM)
                     .chatMemoryProvider(memoryId -> chatMemory)
                     .build();
+            }
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR,
                     "不支持的代码生成类型: " + codeGenType.getValue());
         };
     }
 
-
-    @Bean
-    public AiCodeGeneratorService aiCodeGeneratorService(){
-        return getAiCodeGeneratorService(0L);
-    }
 }
 
 

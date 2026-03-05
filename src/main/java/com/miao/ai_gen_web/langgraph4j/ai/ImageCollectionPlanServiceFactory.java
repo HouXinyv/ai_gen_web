@@ -1,5 +1,6 @@
 package com.miao.ai_gen_web.langgraph4j.ai;
 
+import com.miao.ai_gen_web.utils.SpringContextUtil;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
@@ -9,13 +10,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ImageCollectionPlanServiceFactory {
 
-    @Resource
-    private ChatModel openAiChatModel;
-
     @Bean
     public ImageCollectionPlanService createImageCollectionPlanService() {
+        ChatModel chatModel = SpringContextUtil.getBean("codeCMPrototype",ChatModel.class);
         return AiServices.builder(ImageCollectionPlanService.class)
-                .chatModel(openAiChatModel)
+                .chatModel(chatModel)
                 .build();
     }
 }
