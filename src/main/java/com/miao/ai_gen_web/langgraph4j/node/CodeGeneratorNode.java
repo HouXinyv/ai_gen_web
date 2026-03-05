@@ -9,6 +9,7 @@ import com.miao.ai_gen_web.utils.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
 import org.bsc.langgraph4j.prebuilt.MessagesState;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
@@ -17,6 +18,8 @@ import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
 @Slf4j
 public class CodeGeneratorNode {
+
+
 
     public static AsyncNodeAction<MessagesState<String>> create() {
         return node_async(state -> {
@@ -27,7 +30,7 @@ public class CodeGeneratorNode {
 //            String userMessage = context.getEnhancedPrompt();
             String userMessage = buildUserMessage(context);
             CodeGenTypeEnum generationType = context.getGenerationType();
-            // 获取 AI 代码生成外观服务
+            // 获取 AI 代码生成外观服务, 不能直接注入因为这是一个静态方法，注入的东西是属于对象实例的
             AiCodeGeneratorFacade codeGeneratorFacade = SpringContextUtil.getBean(AiCodeGeneratorFacade.class);
             log.info("开始生成代码，类型: {} ({})", generationType.getValue(), generationType.getText());
             // 先使用固定的 appId (后续再整合到业务中)
